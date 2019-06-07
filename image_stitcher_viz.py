@@ -88,24 +88,21 @@ for ((row, col), entropy) in flatted_entropy_graph:
     #Create template on highly entropic section of image
     template = img0[region_y:region_y+mask_height, region_x:region_x+mask_width]
 
-    #Match template to img2 ... use two methods and only accept matches if both methods come to consensus
-    template_match_1 = cv2.matchTemplate(img1, template, cv2.TM_SQDIFF)
-    template_match_2 = cv2.matchTemplate(img1, template, cv2.TM_CCOEFF)
-    _, _, min_loc1, _ = cv2.minMaxLoc(template_match_1)
-    _, _, _, max_loc2 = cv2.minMaxLoc(template_match_2)
-    if (min_loc1[0] - max_loc2[0])**2 + (min_loc1[1] - max_loc2[1])**2 < cross_check_squared_error_threshold:
-        print("Detected at: " + str(min_loc1))
-        print("Original Loc: " + str((region_x, region_y)))
-        x_trans = (min_loc1[0] - region_x)
-        y_trans = (min_loc1[1] - region_y)
-        if (x_trans, y_trans) in votes:
-            votes[(x_trans, y_trans)] += 1
-            if votes[(x_trans, y_trans)] == k_template_matches:
-                break
-        else:
-            votes[(x_trans, y_trans)] = 1
-            if votes[(x_trans, y_trans)] == k_template_matches:
-                break
+    template_match = cv2.matchTemplate(img1, template, cv2.TM_SQDIFF)
+    _, _, min_loc, _ = cv2.minMaxLoc(template_match)
+
+    print("Detected at: " + str(min_loc))
+    print("Original Loc: " + str((region_x, region_y)))
+    x_trans = (min_loc[0] - region_x)
+    y_trans = (min_loc[1] - region_y)
+    if (x_trans, y_trans) in votes:
+        votes[(x_trans, y_trans)] += 1
+        if votes[(x_trans, y_trans)] == k_template_matches:
+            break
+    else:
+        votes[(x_trans, y_trans)] = 1
+        if votes[(x_trans, y_trans)] == k_template_matches:
+            break
 
 x_trans, y_trans = max(votes, key=votes.get)
 print("Translation: " + str((x_trans, y_trans)))

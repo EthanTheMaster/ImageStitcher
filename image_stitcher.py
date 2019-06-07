@@ -40,7 +40,7 @@ def stitch(img1_color, img2_color, img1_x_trans, img1_y_trans):
 #k_template_matches - number of votes for transformations to be accepted ... higher is more accurate but at cost of performance
 #cross_check_squared_error_threshold - two template matching heuristics are used and the match is accepted if the squared error is
 #                                       below threshold
-def calc_translation(img1_path, img2_path, n_divisions, k_template_matches, cross_check_squared_error_threshold):
+def calc_translation(img1_path, img2_path, n_divisions, k_template_matches):
 
     img1_color = cv2.imread(img1_path, 1)
     img2_color = cv2.imread(img2_path, 1)
@@ -88,33 +88,30 @@ def calc_translation(img1_path, img2_path, n_divisions, k_template_matches, cros
         #Create template on highly entropic section of image
         template = img1[region_y:region_y+mask_height, region_x:region_x+mask_width]
 
-        #Match template to img2 ... use two methods and only accept matches if both methods come to consensus
-        template_match_1 = cv2.matchTemplate(img2, template, cv2.TM_SQDIFF)
-        template_match_2 = cv2.matchTemplate(img2, template, cv2.TM_CCOEFF)
-        _, _, min_loc1, _ = cv2.minMaxLoc(template_match_1)
-        _, _, _, max_loc2 = cv2.minMaxLoc(template_match_2)
-        if (min_loc1[0] - max_loc2[0])**2 + (min_loc1[1] - max_loc2[1])**2 < cross_check_squared_error_threshold:
-            print("Detected at: " + str(min_loc1))
-            print("Original Loc: " + str((region_x, region_y)))
-            x_trans = (min_loc1[0] - region_x)
-            y_trans = (min_loc1[1] - region_y)
-            if (x_trans, y_trans) in votes:
-                votes[(x_trans, y_trans)] += 1
-                if votes[(x_trans, y_trans)] == k_template_matches:
-                    break
-            else:
-                votes[(x_trans, y_trans)] = 1
-                if votes[(x_trans, y_trans)] == k_template_matches:
-                    break
+        template_match = cv2.matchTemplate(img2, template, cv2.TM_SQDIFF)
+        _, _, min_loc, _ = cv2.minMaxLoc(template_match)
+
+        print("Detected at: " + str(min_loc))
+        print("Original Loc: " + str((region_x, region_y)))
+        x_trans = (min_loc[0] - region_x)
+        y_trans = (min_loc[1] - region_y)
+        if (x_trans, y_trans) in votes:
+            votes[(x_trans, y_trans)] += 1
+            if votes[(x_trans, y_trans)] == k_template_matches:
+                break
+        else:
+            votes[(x_trans, y_trans)] = 1
+            if votes[(x_trans, y_trans)] == k_template_matches:
+                break
 
     #Use translation with highest votes
     return (max(votes, key=votes.get), (roi_x, roi_y, roi_w, roi_h))
 
-shot_sequence = ["/home/ethanlam/Pictures/Screenshots/Sample1/Shot1.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample1/Shot2.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample1/Shot3.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample1/Shot4.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample1/Shot5.png"]
+shot_sequence = ["/home/ethanlam/Pictures/Screenshots/Sample5/Shot1.png", \
+                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot2.png", \
+                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot3.png", \
+                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot4.png", \
+                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot5.png"]
 
 #last_stitch holds last made composite image ... "fold" onto this image to form final image
 last_stitch = []
@@ -129,7 +126,7 @@ for i in range(0, len(shot_sequence) - 1):
     print("path1: " + img1_path)
     print("path2: " + img2_path)
 
-    translation, roi_rect = calc_translation(img1_path, img2_path, 15, 7, 1)
+    translation, roi_rect = calc_translation(img1_path, img2_path, 15, 7)
 
     img1_color = cv2.imread(img1_path, 1)
     img2_color = cv2.imread(img2_path, 1)
