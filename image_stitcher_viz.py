@@ -3,13 +3,13 @@ import numpy as np
 from numpy import inf
 from matplotlib import pyplot as plt
 
-folder_path = "/home/ethanlam/Pictures/Screenshots/Sample1/"
-shot_sequence = ["Shot1.png", "Shot2.png", "Shot3.png", "Shot4.png", "Shot5.png"]
+folder_path = "Sample/"
+shot_sequence = ["Shot1.png", "Shot2.png", "Shot3.png", "Shot4.png", "Shot5.png", "Shot6.png", "Shot7.png", "Shot8.png"]
 
 img0 = cv2.imread((folder_path + shot_sequence[0]), 0)
-img1 = cv2.imread((folder_path + shot_sequence[2]), 0)
-img0_color = cv2.imread((folder_path + shot_sequence[2]), 1)
-img1_color = cv2.imread((folder_path + shot_sequence[2]), 1)
+img1 = cv2.imread((folder_path + shot_sequence[1]), 0)
+img0_color = cv2.imread((folder_path + shot_sequence[0]), 1)
+img1_color = cv2.imread((folder_path + shot_sequence[1]), 1)
 
 def calculate_entropy(img):
     histogram = cv2.calcHist([img], [0], None, [256], [0, 256])
@@ -61,7 +61,7 @@ print (str(roi_x) + ", " + str(roi_y) + ", " + str(roi_w) + ", " + str(roi_h))
 
 #Generate Entroy Graph
 #Create mask window
-n = 15
+n = 30
 mask_width = roi_w / n
 mask_height = roi_h / n
 entropy_graph = np.zeros((n, n))
@@ -79,8 +79,7 @@ for xi in range(0, n):
 flatted_entropy_graph = np.ndenumerate(entropy_graph)
 flatted_entropy_graph = sorted(flatted_entropy_graph, key=lambda pair: pair[1], reverse=True)
 k = 0
-k_template_matches = 7
-cross_check_squared_error_threshold = 10.0
+k_template_matches = 35
 votes = {}
 for ((row, col), entropy) in flatted_entropy_graph:
     region_x = roi_x + col * mask_width
@@ -113,23 +112,25 @@ print(stitched_image.shape)
 
 #Graph Everything
 plt.subplot(3, 2, 1)
+plt.title("Image 1 (Grayscale)")
 plt.imshow(img0, 'gray')
 plt.scatter([roi_x, roi_x + roi_w, roi_x, roi_x + roi_w], [roi_y, roi_y + roi_h, roi_y + roi_h, roi_y])
 
 plt.subplot(3, 2, 2)
+plt.title("Image 2 (Grayscale)")
 plt.imshow(img1, 'gray')
 plt.scatter([roi_x, roi_x + roi_w, roi_x, roi_x + roi_w], [roi_y, roi_y + roi_h, roi_y + roi_h, roi_y])
 
 plt.subplot(3, 2, 3)
+plt.title("Blurred Difference Map Used to Calculate ROI")
 plt.imshow(threshold_diff, 'gray')
 
 plt.subplot(3, 2, 4)
-plt.imshow(entropy_graph, 'gray')
-
-plt.subplot(3, 2, 4)
+plt.title("Entropy Of Each Grid Cell in Image 1 ROI ")
 plt.imshow(entropy_graph, 'gray')
 
 plt.subplot(3, 2, 5)
+plt.title("Image 1 Stitched With Image 2")
 plt.imshow(cv2.cvtColor(stitched_image, cv2.COLOR_BGR2RGB))
 
 plt.show()
