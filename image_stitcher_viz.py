@@ -13,7 +13,7 @@ img1_color = cv2.imread((folder_path + shot_sequence[1]), 1)
 
 def calculate_entropy(img):
     histogram = cv2.calcHist([img], [0], None, [256], [0, 256])
-    #Calculate Informational Entroy
+    #Calculate Informational Entropy
     histogram_prob = histogram / np.sum(histogram)
     histogram_prob_log = np.log(histogram_prob)
     #Zero out -inf values due to taking log of 0
@@ -59,7 +59,7 @@ ret, threshold_diff = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY)
 roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(threshold_diff)
 print (str(roi_x) + ", " + str(roi_y) + ", " + str(roi_w) + ", " + str(roi_h))
 
-#Generate Entroy Graph
+#Generate Entropy Graph
 #Create mask window
 n = 30
 mask_width = roi_w / n

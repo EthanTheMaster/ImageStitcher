@@ -6,7 +6,7 @@ import argparse
 
 def calculate_entropy(img):
     histogram = cv2.calcHist([img], [0], None, [256], [0, 256])
-    #Calculate Informational Entroy
+    #Calculate Informational Entropy
     histogram_prob = histogram / np.sum(histogram)
     histogram_prob_log = np.log(histogram_prob)
     #Zero out -inf values due to taking log of 0
@@ -59,7 +59,7 @@ def calc_translation(img1_path, img2_path, n_divisions, k_template_matches):
     roi_x, roi_y, roi_w, roi_h = cv2.boundingRect(threshold_diff)
     print (str(roi_x) + ", " + str(roi_y) + ", " + str(roi_w) + ", " + str(roi_h))
 
-    #Generate Entroy Graph
+    #Generate Entropy Graph
     #Create mask window ... divide roi into a n_divisions x n_divisions grid
     mask_width = roi_w / n_divisions
     mask_height = roi_h / n_divisions
