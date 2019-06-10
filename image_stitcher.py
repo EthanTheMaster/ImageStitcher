@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from numpy import inf
 from matplotlib import pyplot as plt
+import argparse
 
 def calculate_entropy(img):
     histogram = cv2.calcHist([img], [0], None, [256], [0, 256])
@@ -38,8 +39,6 @@ def stitch(img1_color, img2_color, img1_x_trans, img1_y_trans):
 
 #n_divisions - makes a nxn grid in region of interest and creates templates from the cells
 #k_template_matches - number of votes for transformations to be accepted ... higher is more accurate but at cost of performance
-#cross_check_squared_error_threshold - two template matching heuristics are used and the match is accepted if the squared error is
-#                                       below threshold
 def calc_translation(img1_path, img2_path, n_divisions, k_template_matches):
 
     img1_color = cv2.imread(img1_path, 1)
@@ -107,18 +106,51 @@ def calc_translation(img1_path, img2_path, n_divisions, k_template_matches):
     #Use translation with highest votes
     return (max(votes, key=votes.get), (roi_x, roi_y, roi_w, roi_h))
 
-shot_sequence = ["/home/ethanlam/Pictures/Screenshots/Sample5/Shot1.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot2.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot3.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot4.png", \
-                "/home/ethanlam/Pictures/Screenshots/Sample5/Shot5.png"]
+#Do CLI argument parsing
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--roi", nargs="*", type=int, help="Screenshot is cropped to the specified rectangle (top left x, top left y, width, height) and if no coordinates are given, the stitcher will auto-detect a region of interest.")
+parser.add_argument("--N", type=int, help="Region of interest (roi) is divided into an NxN grid and stitcher will template match on the grid cells. The default value is 15.")
+parser.add_argument("--votes", type=int, help="Stitcher determines a transformation through voting, and once a transformation reaches the specified number of votes, that transformation is chosen. A higher value results in higher accuracy at the expense of performance. The default value is 7.")
+parser.add_argument("--path", help="List of paths to sequence of screenshots", nargs='+')
+
+args = parser.parse_args()
+
+#Set up parameters for stitcher
+
+#algorithm will initially find a region of interest and crop all subsequent images in that region
+#roi calculation is very aggressive and is last resort for when there are fixed elements in screenshots
+focus_roi_only = False
+roi_x, roi_y, roi_w, roi_h = (0,0,0,0)
+n_divisions = 15
+k_template_matches = 7
+shot_sequence = []
+
+if args.path is None:
+    print("Stitcher requires a list of screenshots.")
+    exit()
+
+if len(args.path) < 2:
+    print("Stitching images require 2 or more images.")
+    exit()
+else:
+    #Create user-specified region of interest
+    if not(args.roi is None):
+        if len(args.roi) == 4:
+            roi_x, roi_y, roi_w, roi_h = (args.roi[0],args.roi[1],args.roi[2],args.roi[3])
+        if len(args.roi) > 0 and len(args.roi) != 4:
+            print("In order to specify a region of interest, 4 integers are required to specify a rectangle: top left x, top left y, width, height")
+            exit()
+        focus_roi_only = True
+    if not(args.N is None):
+        n_divisions = args.N
+    if not(args.votes is None):
+        k_template_matches = args.votes
+    shot_sequence = args.path
+
 
 #last_stitch holds last made composite image ... "fold" onto this image to form final image
 last_stitch = []
-#algorithm will initially find a region of interest and crop all subsequent images in that region
-#roi calculation is very aggressive and is last resort for when there are fixed elements in screenshots
-focus_roi_only = True
-roi_x, roi_y, roi_w, roi_h = (0,0,0,0)
 for i in range(0, len(shot_sequence) - 1):
     img1_path = shot_sequence[i]
     img2_path = shot_sequence[i+1]
@@ -126,7 +158,7 @@ for i in range(0, len(shot_sequence) - 1):
     print("path1: " + img1_path)
     print("path2: " + img2_path)
 
-    translation, roi_rect = calc_translation(img1_path, img2_path, 15, 7)
+    translation, roi_rect = calc_translation(img1_path, img2_path, n_divisions, k_template_matches)
 
     img1_color = cv2.imread(img1_path, 1)
     img2_color = cv2.imread(img2_path, 1)
